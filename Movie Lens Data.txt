@@ -1,0 +1,403 @@
+
+R version 4.4.0 (2024-04-24) -- "Puppy Cup"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: aarch64-apple-darwin20
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[R.app GUI 1.80 (8376) aarch64-apple-darwin20]
+
+[Workspace restored from /Users/aishwarya/.RData]
+[History restored from /Users/aishwarya/.Rapp.history]
+
+> if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+Loading required package: tidyverse
+── Attaching core tidyverse packages ────────────────────────────────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.5
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.5.1     ✔ tibble    3.2.1
+✔ lubridate 1.9.3     ✔ tidyr     1.3.1
+✔ purrr     1.0.2     
+── Conflicts ──────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+> if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+Loading required package: caret
+Loading required package: lattice
+
+Attaching package: ‘caret’
+
+The following object is masked _by_ ‘.GlobalEnv’:
+
+    RMSE
+
+The following object is masked from ‘package:purrr’:
+
+    lift
+
+> 
+> library(tidyverse)
+> library(caret)
+> 
+> # MovieLens 10M dataset:
+> # https://grouplens.org/datasets/movielens/10m/
+> # http://files.grouplens.org/datasets/movielens/ml-10m.zip
+> 
+> options(timeout = 120)
+> ​
+Error: unexpected invalid token in "​"
+> dl <- "ml-10M100K.zip"
+> if(!file.exists(dl))
++   download.file("https://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
+> ​
+Error: unexpected invalid token in "​"
+> ratings_file <- "ml-10M100K/ratings.dat"
+> if(!file.exists(ratings_file))
++   unzip(dl, ratings_file)
+> ​
+Error: unexpected invalid token in "​"
+> movies_file <- "ml-10M100K/movies.dat"
+> if(!file.exists(movies_file))
++   unzip(dl, movies_file)
+> ​
+Error: unexpected invalid token in "​"
+> ratings <- as.data.frame(str_split(read_lines(ratings_file), fixed("::"), simplify = TRUE),
++                          stringsAsFactors = FALSE)
+                                                                                                                                             
+> colnames(ratings) <- c("userId", "movieId", "rating", "timestamp")
+> ratings <- ratings %>%
++   mutate(userId = as.integer(userId),
++          movieId = as.integer(movieId),
++          rating = as.numeric(rating),
++          timestamp = as.integer(timestamp))
+> ​
+Error: unexpected invalid token in "​"
+> movies <- as.data.frame(str_split(read_lines(movies_file), fixed("::"), simplify = TRUE),
++                         stringsAsFactors = FALSE)
+                                                                                                                                             
+> colnames(movies) <- c("movieId", "title", "genres")
+> movies <- movies %>%
++   mutate(movieId = as.integer(movieId))
+> ​
+Error: unexpected invalid token in "​"
+> movielens <- left_join(ratings, movies, by = "movieId")
+> ​
+Error: unexpected invalid token in "​"
+> # Final hold-out test set will be 10% of MovieLens data
+> set.seed(1, sample.kind="Rounding") # if using R 3.6 or later
+Warning message:
+In set.seed(1, sample.kind = "Rounding") :
+  non-uniform 'Rounding' sampler used
+> # set.seed(1) # if using R 3.5 or earlier
+> test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.1, list = FALSE)
+> edx <- movielens[-test_index,]
+> temp <- movielens[test_index,]
+> ​
+Error: unexpected invalid token in "​"
+> # Make sure userId and movieId in final hold-out test set are also in edx set
+> final_holdout_test <- temp %>% 
++   semi_join(edx, by = "movieId") %>%
++   semi_join(edx, by = "userId")
+> ​
+Error: unexpected invalid token in "​"
+> # Add rows removed from final hold-out test set back into edx set
+> removed <- anti_join(temp, final_holdout_test)
+Joining with `by = join_by(userId, movieId, rating, timestamp, title, genres)`
+> edx <- rbind(edx, removed)
+> ​
+Error: unexpected invalid token in "​"
+> rm(dl, ratings, movies, test_index, temp, movielens, removed)
+> set.seed(1, sample.kind="Rounding")
+Warning message:
+In set.seed(1, sample.kind = "Rounding") :
+  non-uniform 'Rounding' sampler used
+> test_index <- createDataPartition(y = edx$rating, times = 1, p = 0.1, list = FALSE)
+> train_set <- edx[-test_index,]
+> temp <- edx[test_index,]
+> test_set <- temp %>%
++   semi_join(train_set, by = "movieId") %>%
++   semi_join(train_set, by = "userId")
+> removed <- anti_join(temp, test_set)
+Joining with `by = join_by(userId, movieId, rating, timestamp, title, genres)`
+> train_set <- rbind(train_set, removed)
+> 
+> rm(test_index, temp, removed)
+> # Data Analysis 
+> str(edx)
+'data.frame':	9000055 obs. of  6 variables:
+ $ userId   : int  1 1 1 1 1 1 1 1 1 1 ...
+ $ movieId  : int  122 185 292 316 329 355 356 362 364 370 ...
+ $ rating   : num  5 5 5 5 5 5 5 5 5 5 ...
+ $ timestamp: int  838985046 838983525 838983421 838983392 838983392 838984474 838983653 838984885 838983707 838984596 ...
+ $ title    : chr  "Boomerang (1992)" "Net, The (1995)" "Outbreak (1995)" "Stargate (1994)" ...
+ $ genres   : chr  "Comedy|Romance" "Action|Crime|Thriller" "Action|Drama|Sci-Fi|Thriller" "Action|Adventure|Sci-Fi" ...
+> # summary of the data 
+> edx %>% select(-genres) %>% summary()
+     userId         movieId          rating        timestamp            title          
+ Min.   :    1   Min.   :    1   Min.   :0.500   Min.   :7.897e+08   Length:9000055    
+ 1st Qu.:18124   1st Qu.:  648   1st Qu.:3.000   1st Qu.:9.468e+08   Class :character  
+ Median :35738   Median : 1834   Median :4.000   Median :1.035e+09   Mode  :character  
+ Mean   :35870   Mean   : 4122   Mean   :3.512   Mean   :1.033e+09                     
+ 3rd Qu.:53607   3rd Qu.: 3626   3rd Qu.:4.000   3rd Qu.:1.127e+09                     
+ Max.   :71567   Max.   :65133   Max.   :5.000   Max.   :1.231e+09                     
+> # number of unique users and different movies 
+> edx %>% summarize(n_users = n_distinct(userId), n_movies = n_distinct(movieId))
+  n_users n_movies
+1   69878    10677
+> 
+> # the most popular movies in the data set 
+> edx %>%
++   group_by(title) %>%
++   summarize(count = n()) %>%
++   arrange(-count) %>%
++   top_n(20, count) %>%
++   ggplot(aes(count, reorder(title, count))) +
++   geom_bar(color = "pink", fill = "blue", stat = "identity") +
++   xlab("Count") +
++   ylab(NULL) +
++   theme_bw()
+> # the distribution of movie rating from 0 to 5 
+> edx %>%
++   ggplot(aes(rating, y = ..prop..)) +
++   geom_bar(color = "black", fill = "pink") +
++   labs(x = "Ratings", y = "Relative Frequency") +
++   scale_x_continuous(breaks = c(0,0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5)) +
++   theme_bw()
+Warning message:
+The dot-dot notation (`..prop..`) was deprecated in ggplot2 3.4.0.
+ℹ Please use `after_stat(prop)` instead.
+This warning is displayed once every 8 hours.
+Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated. 
+> # this graph shoes number of ratings vs users 
+> edx %>% group_by(userId) %>%
++   summarize(count = n()) %>%
++   ggplot(aes(count)) +
++   geom_histogram(color = "black", fill = "green", bins = 20) +
++   xlab("Ratings") +
++   ylab("Users") +
++   scale_x_log10() +
++   theme_bw()
+> # Data Evaluation 
+> RMSE <- function(true_ratings, predicted_ratings){
++   sqrt(mean((true_ratings - predicted_ratings)^2))
++ }
+> # Model 1- will be making a prediction by using the average of all movie ratings 
+> mu_hat <- mean(train_set$rating)
+> mu_hat
+[1] 3.512456
+> naive_rmse <- RMSE(test_set$rating, mu_hat)
+> results <- tibble(Method = "Model 1: Simply the mean", RMSE = naive_rmse)
+> results %>% knitr::kable()
+
+
+|Method                   |     RMSE|
+|:------------------------|--------:|
+|Model 1: Simply the mean | 1.060054|
+> # Model 2 will be taking into account movie bias 
+> bi <- train_set %>%
++   group_by(movieId) %>%
++   summarize(b_i = mean(rating - mu_hat))
+> bi %>% ggplot(aes(b_i)) +
++   geom_histogram(color = "black", fill = "blue", bins = 10) +
++   xlab("Movie Bias") +
++   ylab("Count") +
++   theme_bw()
+Error in UseMethod("depth") : 
+  no applicable method for 'depth' applied to an object of class "NULL"
+> predicted_ratings <- mu_hat + test_set %>%
++   left_join(bi, by = "movieId") %>%
++   pull(b_i)
+> m_bias_rmse <- RMSE(predicted_ratings, test_set$rating)
+> results <- bind_rows(results, tibble(Method = "Model 2: Mean + movie bias", RMSE = m_bias_rmse))
+> results %>% knitr::kable()
+
+
+|Method                     |      RMSE|
+|:--------------------------|---------:|
+|Model 1: Simply the mean   | 1.0600537|
+|Model 2: Mean + movie bias | 0.9429615|
+> # Model 2 will be using advancing graphing and using matrix factorization 
+> library(recosystem)
+Error in library(recosystem) : there is no package called ‘recosystem’
+> set.seed(1, sample.kind="Rounding")
+Warning message:
+In set.seed(1, sample.kind = "Rounding") :
+  non-uniform 'Rounding' sampler used
+> train_reco <- with(train_set, data_memory(user_index = userId, item_index = movieId, rating = rating))
+Error in data_memory(user_index = userId, item_index = movieId, rating = rating) : 
+  could not find function "data_memory"
+> test_reco <- with(test_set, data_memory(user_index = userId, item_index = movieId, rating = rating))
+Error in data_memory(user_index = userId, item_index = movieId, rating = rating) : 
+  could not find function "data_memory"
+> r <- Reco()
+Error in Reco() : could not find function "Reco"
+> 
+> para_reco <- r$tune(train_reco, opts = list(dim = c(20, 30),
++                                             costp_l2 = c(0.01, 0.1),
++                                             costq_l2 = c(0.01, 0.1),
++                                             lrate = c(0.01, 0.1),
++                                             nthread = 4,
++                                             niter = 10))
+Error: object 'r' not found
+> 
+> r$train(train_reco, opts = c(para_reco$min, nthread = 4, niter = 30))
+Error: object 'r' not found
+> results_reco <- r$predict(test_reco, out_memory())
+Error: object 'r' not found
+> library(recosystem)
+Error in library(recosystem) : there is no package called ‘recosystem’
+> bu <- train_set %>%
++   left_join(bi, by = "movieId") %>%
++   group_by(userId) %>%
++   summarize(b_u = mean(rating - mu_hat - b_i))
+> predicted_ratings <- test_set %>%
++   left_join(bi, by = "movieId") %>%
++   left_join(bu, by = "userId") %>%
++   mutate(pred = mu_hat + b_i + b_u) %>%
++   pull(pred)
+> u_bias_rmse <- RMSE(predicted_ratings, test_set$rating)
+> results <- bind_rows(results, tibble(Method = "Model 3: Mean + movie bias + user effect", RMSE = u_bias_rmse))
+> results %>% knitr::kable()
+
+
+|Method                                   |      RMSE|
+|:----------------------------------------|---------:|
+|Model 1: Simply the mean                 | 1.0600537|
+|Model 2: Mean + movie bias               | 0.9429615|
+|Model 3: Mean + movie bias + user effect | 0.8646843|
+> lambdas <- seq(0, 10, 0.25)
+> rmses <- sapply(lambdas, function(x){
++   b_i <- train_set %>%
++     group_by(movieId) %>%
++     summarize(b_i = sum(rating - mu_hat)/(n()+x))
++   b_u <- train_set %>%
++     left_join(b_i, by = "movieId") %>%
++     group_by(userId) %>%
++     summarize(b_u = sum(rating - b_i - mu_hat)/(n()+x))
++   predicted_ratings <- test_set %>%
++     left_join(b_i, by = "movieId") %>%
++     left_join(b_u, by = "userId") %>%
++     mutate(pred = mu_hat + b_i + b_u) %>%
++     pull(pred)
++   return(RMSE(predicted_ratings, test_set$rating))
++ })
+qplot(lambdas, rmses, color = I("blue"))
+lambda <- lambdas[which.min(rmses)]
+lambda
+results <- bind_rows(results, tibble(Method = "Model 4: Regularized movie and user effects", RMSE = min(rmses)))
+results %>% knitr::kable()
+> 
+> qplot(lambdas, rmses, color = I("pink"))
+Warning message:
+`qplot()` was deprecated in ggplot2 3.4.0.
+This warning is displayed once every 8 hours.
+Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated. 
+> qplot(lambdas, rmses, color = I("pink"))
+Error in UseMethod("depth") : 
+  no applicable method for 'depth' applied to an object of class "NULL"
+> 
+> qplot(lambdas, rmses, color = I("pink"))
+> lambda <- lambdas[which.min(rmses)]
+> lambda
+[1] 5
+> 
+> 
+> qplot(lambdas, rmses, color = I("blue"))
+> qplot(lambdas, rmses, color = I("blue"))
+> lambda <- lambdas[which.min(rmses)]
+> lambda
+[1] 5
+> qplot(lambdas, rmses, color = I("blue"))
+> lambda <- lambdas[which.min(rmses)]
+> lambda
+[1] 5
+> results <- bind_rows(results, tibble(Method = "Model 4: Regularized movie and user effects", RMSE = min(rmses)))
+> results %>% knitr::kable()
+
+
+|Method                                      |      RMSE|
+|:-------------------------------------------|---------:|
+|Model 1: Simply the mean                    | 1.0600537|
+|Model 2: Mean + movie bias                  | 0.9429615|
+|Model 3: Mean + movie bias + user effect    | 0.8646843|
+|Model 4: Regularized movie and user effects | 0.8641362|
+> library(recosystem)
+Error in library(recosystem) : there is no package called ‘recosystem’
+> set.seed(1, sample.kind="Rounding")
+Warning message:
+In set.seed(1, sample.kind = "Rounding") :
+  non-uniform 'Rounding' sampler used
+> train_reco <- with(train_set, data_memory(user_index = userId, item_index = movieId, rating = rating))
+Error in data_memory(user_index = userId, item_index = movieId, rating = rating) : 
+  could not find function "data_memory"
+> test_reco <- with(test_set, data_memory(user_index = userId, item_index = movieId, rating = rating))
+Error in data_memory(user_index = userId, item_index = movieId, rating = rating) : 
+  could not find function "data_memory"
+> r <- Reco()
+Error in Reco() : could not find function "Reco"
+> 
+> para_reco <- r$tune(train_reco, opts = list(dim = c(20, 30),
++                                             costp_l2 = c(0.01, 0.1),
++                                             costq_l2 = c(0.01, 0.1),
++                                             lrate = c(0.01, 0.1),
++                                             nthread = 4,
++                                             niter = 10))
+Error: object 'r' not found
+> 
+> r$train(train_reco, opts = c(para_reco$min, nthread = 4, niter = 30))
+Error: object 'r' not found
+> results_reco <- r$predict(test_reco, out_memory())
+Error: object 'r' not found
+> 
+> factorization_rmse <- RMSE(results_reco, test_set$rating)
+Error: object 'results_reco' not found
+> results <- bind_rows(results, tibble(Method = "Model 5: Matrix factorization using ricosystem", RMSE = factorization_rmse))
+Error: object 'factorization_rmse' not found
+> results %>% knitr::kable()
+
+
+|Method                                      |      RMSE|
+|:-------------------------------------------|---------:|
+|Model 1: Simply the mean                    | 1.0600537|
+|Model 2: Mean + movie bias                  | 0.9429615|
+|Model 3: Mean + movie bias + user effect    | 0.8646843|
+|Model 4: Regularized movie and user effects | 0.8641362|
+> set.seed(1, sample.kind="Rounding")
+Warning message:
+In set.seed(1, sample.kind = "Rounding") :
+  non-uniform 'Rounding' sampler used
+> edx_reco <- with(edx, data_memory(user_index = userId, item_index = movieId, rating = rating))
+Error in data_memory(user_index = userId, item_index = movieId, rating = rating) : 
+  could not find function "data_memory"
+> validation_reco <- with(validation, data_memory(user_index = userId, item_index = movieId, rating = rating))
+Error: object 'validation' not found
+> r <- Reco()
+Error in Reco() : could not find function "Reco"
+> 
+> set.seed(1, sample.kind = "Rounding")
+Warning message:
+In set.seed(1, sample.kind = "Rounding") :
+  non-uniform 'Rounding' sampler used
+> train_reco <- with(train_set, data_memory(user_index = userId, item_index = movieId, rating = rating))
+Error in data_memory(user_index = userId, item_index = movieId, rating = rating) : 
+  could not find function "data_memory"
+> test_reco <- with(test_set, data_memory(user_index = userId, item_index = movieId, rating = rating))
+Error in data_memory(user_index = userId, item_index = movieId, rating = rating) : 
+  could not find function "data_memory"
+> r <- Reco()
+Error in Reco() : could not find function "Reco"
+> # Our final RMSE is 0.86 
+> 
